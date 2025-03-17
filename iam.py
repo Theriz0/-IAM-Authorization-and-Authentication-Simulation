@@ -1,15 +1,12 @@
+from flask import Flask, request, jsonify, send_from_directory
+import openpyxl
+import os
+
+app = Flask(__name__)
+
 class IAM:
-    def __init__(self):
-        self.users = {
-            "alice": {"password": "password", "role": "viewer"},
-            "bob": {"password": "password1", "role": "editor"},
-            "charlie": {"password": "password2", "role": "admin"},
-        }
-        self.roles = {
-            "viewer": {"permissions": ["read_report", "view_dashboard"]},
-            "editor": {"permissions": ["read_report", "view_dashboard", "edit_report"]},
-            "admin": {"permissions": ["read_report", "view_dashboard", "edit_report", "manage_settings"]},
-        }
+    def __init__(self, excel_file="iam_data.xlsx"):
+        self.excel_file = excel_file
         self.resources = {
             "report": "read_report",
             "dashboard": "view_dashboard",
@@ -17,54 +14,61 @@ class IAM:
         }
 
     def authenticate(self, username, password):
-        if username in self.users and self.users[username]["password"] == password:
-            return True
+        wb = openpyxl.load_workbook(self.excel_file)
+        sheet = wb["Users"]
+
+        for row in sheet.iter_rows(min_row=2):
+            if row[0].value == username and row[1].value == password:
+                return True
         return False
 
     def authorize(self, username, resource):
-        if username not in self.users:
+        wb = openpyxl.load_workbook(self.excel_file)
+        users_sheet = wb["Users"]
+        roles_sheet = wb["Roles"]
+
+        user_role = None
+        for row in users_sheet.iter_rows(min_row=2):
+            if row[0].value == username:
+                user_role = row[2].value
+                break
+
+        if not user_role:
             return False
 
-        user_role = self.users[username]["role"]
+        role_permissions = None
+        for row in roles_sheet.iter_rows(min_row=2):
+            if row[0].value == user_role:
+                role_permissions = row[1].value
+                break
+
+        if not role_permissions:
+            return False
+
         required_permission = self.resources.get(resource)
+        return required_permission in role_permissions.split(",")
 
-        if required_permission is None:
-            return False # resource does not exist.
-
-        if required_permission in self.roles[user_role]["permissions"]:
-            return True
-        return False
-
-# Example Usage
 iam = IAM()
 
-# Authentication
-user = "bob"
-password = "bobpass"
+@app.route('/authenticate', methods=['POST'])
+def authenticate():
+    data = request.get_json()
+    username = data['username']
+    password = data['password']
+    success = iam.authenticate(username, password)
+    return jsonify({'success': success})
 
-if iam.authenticate(user, password):
-    print(f"Authentication successful for {user}")
+@app.route('/authorize', methods=['POST'])
+def authorize():
+    data = request.get_json()
+    username = data['username']
+    resource = data['resource']
+    success = iam.authorize(username, resource)
+    return jsonify({'success': success})
 
-    # Authorization
-    resource = "report"
-    if iam.authorize(user, resource):
-        print(f"{user} is authorized to access {resource}")
-    else:
-        print(f"{user} is not authorized to access {resource}")
+@app.route('/') #Add this route.
+def index():
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'auth.html')
 
-    resource = "settings"
-    if iam.authorize(user, resource):
-        print(f"{user} is authorized to access {resource}")
-    else:
-        print(f"{user} is not authorized to access {resource}")
-
-else:
-    print("Authentication failed.")
-
-user = "alice"
-password = "wrongpassword"
-
-if iam.authenticate(user, password):
-    print(f"Authentication successful for {user}")
-else:
-    print("Authentication failed.")
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
