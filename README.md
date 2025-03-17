@@ -37,7 +37,6 @@ This project simulates a basic Identity and Access Management (IAM) system using
 * **Excel File:** Make sure to create the `iam_data.xlsx` file in the same directory as `iam.py` before running the application. The excel file needs to contain the sheets "Users" and "Roles".
 * **Admin Role:** User management features are only accessible to users with the "admin" role.
 * **Security:** This is a basic simulation and should not be used in a production environment. For production, consider using a proper database and more robust security measures.
-* **Sessions:** The secret key is generated using os.urandom(24) which is fine for development. For production you should store a very long random string in a config file, and load it from there.
 
 ## Project Structure
 
