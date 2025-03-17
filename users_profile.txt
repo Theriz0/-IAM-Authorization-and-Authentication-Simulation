@@ -1,8 +1,14 @@
 user1: alice
 password: password
+role: viewer
+permissions: read_report,view_dashboard
 
 user2: bob
 password: password1
+role: editor
+permissions: read_report,view_dashboard,edit_report
 
 user3: charlie
 password: password2
+role: admin
+permissions: read_report,view_dashboard,edit_report,manage_settings
