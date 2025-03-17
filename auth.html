@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html>
 <head>
     <title>Simple IAM Simulation</title>
@@ -29,50 +29,7 @@
     </div>
 
     <script>
-        class IAM {
-            constructor() {
-                this.users = {
-                    "alice": { "password": "password", "role": "viewer" },
-                    "bob": { "password": "password1", "role": "editor" },
-                    "charlie": { "password": "password2", "role": "admin" },
-                };
-                this.roles = {
-                    "viewer": { "permissions": ["read_report", "view_dashboard"] },
-                    "editor": { "permissions": ["read_report", "view_dashboard", "edit_report"] },
-                    "admin": { "permissions": ["read_report", "view_dashboard", "edit_report", "manage_settings"] },
-                };
-                this.resources = {
-                    "report": "read_report",
-                    "dashboard": "view_dashboard",
-                    "settings": "manage_settings",
-                };
-                this.currentUser = null;
-            }
-
-            authenticate(username, password) {
-                if (username in this.users && this.users[username]["password"] === password) {
-                    this.currentUser = username;
-                    return true;
-                }
-                return false;
-            }
-
-            authorize(resource) {
-                if (!this.currentUser) {
-                    return false;
-                }
-
-                const userRole = this.users[this.currentUser]["role"];
-                const requiredPermission = this.resources[resource];
-
-                if (this.roles[userRole]["permissions"].includes(requiredPermission)) {
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        const iam = new IAM();
+        let currentUser = null;
 
         function authenticate() {
             const username = document.getElementById("username").value;
@@ -80,26 +37,48 @@
             const resultElement = document.getElementById("auth-result");
             const resourceElement = document.getElementById("auth-resource");
 
-            if (iam.authenticate(username, password)) {
-                resultElement.textContent = `Authentication successful for ${username}`;
-                resourceElement.style.display = "block";
-                document.getElementById("auth-form").style.display = "none";
-            } else {
-                resultElement.textContent = "Authentication failed.";
-                resourceElement.style.display = "none";
-            }
+            fetch('/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = username;
+                    resultElement.textContent = `Authentication successful for ${username}`;
+                    resourceElement.style.display = "block";
+                    document.getElementById("auth-form").style.display = "none";
+                } else {
+                    resultElement.textContent = "Authentication failed.";
+                    resourceElement.style.display = "none";
+                }
+            });
         }
 
         function authorize() {
             const resource = document.getElementById("resource").value;
             const resultElement = document.getElementById("auth-resource-result");
 
-            if (iam.authorize(resource)) {
-                resultElement.textContent = `${iam.currentUser} is authorized to access ${resource}`;
-            } else {
-                resultElement.textContent = `${iam.currentUser} is not authorized to access ${resource}`;
-            }
+            fetch('/authorize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: currentUser, resource: resource })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultElement.textContent = `${currentUser} is authorized to access ${resource}`;
+                } else {
+                    resultElement.textContent = `${currentUser} is not authorized to access ${resource}`;
+                }
+            });
         }
     </script>
 </body>
 </html>
+
