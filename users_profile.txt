@@ -1,0 +1,8 @@
+user1: alice
+password: password
+
+user2: bob
+password: password1
+
+user3: charlie
+password: password2
