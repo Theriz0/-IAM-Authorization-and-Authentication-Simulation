@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Simple IAM Simulation</title>
@@ -28,6 +28,17 @@
         <p id="auth-resource-result"></p>
     </div>
 
+    <div id="user-management" style="display: none;">
+        <h2>User Management</h2>
+        <form id="createUserForm">
+            <input type="text" id="newUsername" placeholder="Username">
+            <input type="password" id="newUserPassword" placeholder="Password">
+            <input type="text" id="newUserRole" placeholder="Role">
+            <button type="button" onclick="createUser()">Create User</button>
+        </form>
+        <p id="createUserResult"></p>
+    </div>
+
     <script>
         let currentUser = null;
 
@@ -51,6 +62,7 @@
                     resultElement.textContent = `Authentication successful for ${username}`;
                     resourceElement.style.display = "block";
                     document.getElementById("auth-form").style.display = "none";
+                    checkAdminStatus(); // Call checkAdminStatus after successful login
                 } else {
                     resultElement.textContent = "Authentication failed.";
                     resourceElement.style.display = "none";
@@ -78,7 +90,44 @@
                 }
             });
         }
+
+        function createUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+            const resultElement = document.getElementById('createUserResult');
+
+            fetch('/create_user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password, role: role })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultElement.textContent = `User ${username} created successfully.`;
+                } else {
+                    resultElement.textContent = `Failed to create user ${username}. ${data.message}`;
+                }
+            });
+        }
+
+        function checkAdminStatus() {
+            fetch('/check_admin_status', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.isAdmin) {
+                    document.getElementById('user-management').style.display = 'block';
+                } else {
+                    document.getElementById('user-management').style.display = 'none';
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
-
