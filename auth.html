@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple IAM Simulation</title>
+</head>
+<body>
+    <h1>Simple IAM Simulation</h1>
+
+    <div id="auth-form">
+        <h2>Authentication</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br><br>
+        <button onclick="authenticate()">Authenticate</button>
+        <p id="auth-result"></p>
+    </div>
+
+    <div id="auth-resource" style="display: none;">
+        <h2>Resource Access</h2>
+        <label for="resource">Resource:</label>
+        <select id="resource">
+            <option value="report">Report</option>
+            <option value="dashboard">Dashboard</option>
+            <option value="settings">Settings</option>
+        </select><br><br>
+        <button onclick="authorize()">Authorize</button>
+        <p id="auth-resource-result"></p>
+    </div>
+
+    <script>
+        class IAM {
+            constructor() {
+                this.users = {
+                    "alice": { "password": "password", "role": "viewer" },
+                    "bob": { "password": "password1", "role": "editor" },
+                    "charlie": { "password": "password2", "role": "admin" },
+                };
+                this.roles = {
+                    "viewer": { "permissions": ["read_report", "view_dashboard"] },
+                    "editor": { "permissions": ["read_report", "view_dashboard", "edit_report"] },
+                    "admin": { "permissions": ["read_report", "view_dashboard", "edit_report", "manage_settings"] },
+                };
+                this.resources = {
+                    "report": "read_report",
+                    "dashboard": "view_dashboard",
+                    "settings": "manage_settings",
+                };
+                this.currentUser = null;
+            }
+
+            authenticate(username, password) {
+                if (username in this.users && this.users[username]["password"] === password) {
+                    this.currentUser = username;
+                    return true;
+                }
+                return false;
+            }
+
+            authorize(resource) {
+                if (!this.currentUser) {
+                    return false;
+                }
+
+                const userRole = this.users[this.currentUser]["role"];
+                const requiredPermission = this.resources[resource];
+
+                if (this.roles[userRole]["permissions"].includes(requiredPermission)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        const iam = new IAM();
+
+        function authenticate() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const resultElement = document.getElementById("auth-result");
+            const resourceElement = document.getElementById("auth-resource");
+
+            if (iam.authenticate(username, password)) {
+                resultElement.textContent = `Authentication successful for ${username}`;
+                resourceElement.style.display = "block";
+                document.getElementById("auth-form").style.display = "none";
+            } else {
+                resultElement.textContent = "Authentication failed.";
+                resourceElement.style.display = "none";
+            }
+        }
+
+        function authorize() {
+            const resource = document.getElementById("resource").value;
+            const resultElement = document.getElementById("auth-resource-result");
+
+            if (iam.authorize(resource)) {
+                resultElement.textContent = `${iam.currentUser} is authorized to access ${resource}`;
+            } else {
+                resultElement.textContent = `${iam.currentUser} is not authorized to access ${resource}`;
+            }
+        }
+    </script>
+</body>
+</html>
