@@ -1,8 +1,14 @@
 from flask import Flask, request, jsonify, send_from_directory
 import openpyxl
 import os
+import logging
+from datetime import datetime
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(filename='iam.log', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 class IAM:
     def __init__(self, excel_file="iam_data.xlsx"):
@@ -56,6 +62,12 @@ def authenticate():
     username = data['username']
     password = data['password']
     success = iam.authenticate(username, password)
+    
+    if success:
+        logging.info(f"Authentication successful: username={username}")
+    else:
+        logging.warning(f"Authentication failed: username={username}")
+    
     return jsonify({'success': success})
 
 @app.route('/authorize', methods=['POST'])
@@ -64,6 +76,12 @@ def authorize():
     username = data['username']
     resource = data['resource']
     success = iam.authorize(username, resource)
+    
+    if success:
+        logging.info(f"Authorization successful: username={username}")
+    else:
+        logging.warning(f"Authorization failed: username={username}")
+    
     return jsonify({'success': success})
 
 @app.route('/') #Add this route.
