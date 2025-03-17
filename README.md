@@ -2,6 +2,11 @@
 
 Project setup:
 
-run the following to set up http web server: python -m http.server 8000
+Install these python dependencies: 
+pip install flask
+pip install openpyxl
+pip install send_from_directory
 
-goto the following local ip: http://localhost:8000/auth.html
+run the following Flask app: python iam.py
+
+goto the following local ip: http://localhost:5000/auth.html
